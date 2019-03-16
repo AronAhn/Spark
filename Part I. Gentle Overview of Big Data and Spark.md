@@ -41,3 +41,25 @@
 ## Actions: 쌓여온 transformation들의 실제 실행
   - There are three kinds of actions; viewing data / colleting data to object in the respective language / write to output
   
+# Chapter 3. A Tour of Spark's Toolset
+- spark-submit: A built-in command-line tool. It offers several controls with which you can specify the resources your application needs as well as how it should be run and its command-line arguments
+
+## Datasets: Type-Safe Structure APIs
+  - It write statically typed code in Java and Scala
+  - *Not available in Python and R*, because those languages and dynamically typed
+  - It  gives users the ability to assign a Java/Scala class to the records within a DataFrame and manipulate it as collection of typed objects
+
+## Structure Streaming
+  - A high-level API for stream procesing that became production-ready in Spark 2.2
+  - It allows user to rapidly and quickly extract value out of streaming systems with virtually *no code changes*
+  - Write a batch job as a way to prototype it and then convert it to a streaming job
+  - Code
+```
+# Static version
+from pyspark.sql.functions import window, column, desc, col
+staticDataFrame = (
+spark.read.forma("csv")
+```
+
+## Machine Learning and Advanced Analytics
+  - 
