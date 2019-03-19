@@ -110,3 +110,13 @@ paper.fillna({'citation_count_filter':0})
 - https://databricks.com/blog/2017/10/30/introducing-vectorized-udfs-for-pyspark.html
 - https://danvatterott.com/blog/2018/09/06/python-aggregate-udfs-in-pyspark/
 - https://florianwilhelm.info/2017/10/efficient_udfs_with_pyspark/
+```
+@pandas_udf("col1 string, col2 integer", PandasUDFType.GROUPED_MAP)
+# Input/output are both a pandas.DataFrame
+def udf(df):
+  return df[['col1', 'col2']]
+
+def square_float(x):
+    return float(x**2)
+square_udf_float2 = udf(lambda z: square_float(z), FloatType())
+```
