@@ -60,6 +60,3 @@ from pyspark.sql.functions import window, column, desc, col
 staticDataFrame = (
 spark.read.forma("csv")
 ```
-
-## Machine Learning and Advanced Analytics
-  - 
