@@ -73,9 +73,11 @@ df.orderBy(df['Sales'].desc()).show()
 
 - generate index
 ```
-#generate id
-#note that there might be jumps between ids
-#to avoid it, set the number of partition as 1, if possible (for small dataframe)
+'''
+generate id
+Note that there might be jumps between ids
+To avoid it, set the number of partition as 1, if possible (for small dataframe only)
+'''
 url_df.withColumn('dummy', F.monotonically_increasing_id())
 ```
 
@@ -112,10 +114,11 @@ paper.fillna({'citation_count_filter':0})
 - https://florianwilhelm.info/2017/10/efficient_udfs_with_pyspark/
 ```
 @pandas_udf("col1 string, col2 integer", PandasUDFType.GROUPED_MAP)
-# Input/output are both a pandas.DataFrame
+# Input/output are both a pandas.DataFrame but output pandas dfs will be concated and returned as a spark df
 def udf(df):
   return df[['col1', 'col2']]
 
+# simpler type; return only a column; use with select
 def square_float(x):
     return float(x**2)
 square_udf_float2 = udf(lambda z: square_float(z), FloatType())
