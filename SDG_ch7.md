@@ -21,7 +21,7 @@ df.createOrReplaceTempView("dfTable")
 df.count() # note that the count function is evaluated instead of a lazy transformation
 ```
 
-** Aggregation Functions
+## Aggregation Functions
 - count: To perform it as a transformation instead of an actions, we can do one of two thins
   - Specify a specific column to count
   - All the columns by using count(*) or count(1) to represent that we want to count every row as the literal one, as shown in this example
