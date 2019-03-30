@@ -53,6 +53,7 @@ seriesX = sc.parallelize([1.0, 2.0, 3.0, 3.0, 5.0])  # a series
 # seriesY must have the same number of partitions and cardinality as seriesX
 seriesY = sc.parallelize([11.0, 22.0, 33.0, 33.0, 555.0])
 print("Correlation is: " + str(Statistics.corr(seriesX, seriesY, method="pearson")))
+```
 
 ## Aggregating to Complex Types
 - In Spark, user can perform aggregations not just of numerical values using formulas, user can also perform them on complex types
