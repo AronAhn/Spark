@@ -1,69 +1,178 @@
-# Chapter 4. Structured API Overview
+# Chapter 5. Basic Structured Operations
 
-- *Structured APIs* are a tool for manipulation all sorts of data, from unstructured log files to semi-structured CSV files and highly structure Parquet files
-- The core types of distributed collection APIs
-  - Datasets
-  - DataFrame
-  - SQL tables and views
-- The majority of the Structured APIs apply to both *batch* and *streaming*
+## Schemas
+- A schema defines the column names and types of a DataFrame, We can either let a data source define the schema (called *schema-on-read*) or we can defin it explicitly ourselves
+  - For ad hoc analysis, schema-on-read usually works just fine although it may be slow with plain-text like csv or json
+  - Howevere it can also lead to precision issues like a *long* type incorrectly set as an integer when readin in a file
+  - When using Spark for production ETL, it is often a good idea to define your schemas manually, especially when working with untyped data sources like CSV or JSON
+  - Schema inference can vary depending on the type of data that you read in
+  - 요약: production 라인에 올릴 땐 schema를 infer하지않는 게 안전. 특히 텍스트 데이터들의 경우에 더더욱
+- A schema is a *StructType* made up of a number of fields, *StructFields* that have a name, type, a Boolean flag which specifies whether that column can contain missing or *null* values
+- Users can optionally specify associated metadata with that column; The metadata is a way of storing information about this column (Spark uses this in its machine learning library)
+- Sample codes
+```
+# in Python
+from pyspark.sql.types import StructField, StructType, StringType, LongType
+myManualSchema = StructType([
+StructField("DEST_COUNTRY_NAME", StringType(), True),
+StructField("ORIGIN_COUNTRY_NAME", StringType(), True),
+StructField("count", LongType(), False, metadata={"hello":"world"})
+])
+df = spark.read.format("json").schema(myManualSchema)\
+.load("/data/flight-data/json/2015-summary.json")
+```
 
-## DataFrames and DataSets
-  - DataFrames and DataSets are distributed table-like collections with well-defined rows and columns
-  - Each columns has type information that must be consistent for every row in the collection.
-  - To Spark, DF and DS represent immutable, lazily evaluated plans that specify what operations to apply to data residing at a location to generate some output
-  
-## Overview of Structured Spark Types
-- Internally, Spark uses an engine called *Catalyst* that maintains its own type information through the planning and processing of work
-- Even if we use Spark's Structured APIs from python or R, the majority of our manipulations will operate strictly on Spark types, not Python types
-  - python이든 scala든 무슨 언어로 돌려도 결국은 Spark types이란 걸로 명령은 돌아간다
+## Columns and Expressions
+- Columns in Spark are siilar to columns in a spreadsheet, R df, or pd df.
+- The operations on these are represented as *expressions*
+- To Spark, columns are logical constructions that simply represent a value computed on a per-record basis by means of an expression
+  - Users cannot manipulate an individual column outside the context of a DF
 
-## DFs vs DSs
-- In essence, within the Structured APIs, there are two more APIs, the "untyped" DF and the "typed" DSs
-- the untyped DFs actually have types, but Spark maintains them completely and only check whether those types line up to those specified in the scema at *runtime*
-- On the other hand, DSs check whether types conform to the specification at *compile time*
-- To Spark, DFs are simply Datasets of Tye "Row"
-  - The "Row" type is Spark's internal representation of its optimized in-memory format for computation
-- To spark in python, there is no such thing as a Dataset: everything is a DF and therefore we always operate on that optimized format
-- 이하 요약: 위의 개념들은 이해하기가 좀 버거울 수 있고 대부분 경우 깊이 알 필요가 없어 자세한 설명은 생략. 대강 DF만 잘 써먹으면 된다
+### columns
+- *col* method on the specific DF is used to refer to a specific DF's column
 
-## Columns
-- Columns represent a *simple type* like an integer or string, a *complex type* like an array or map or a *null value*
+### Expressions
+- An *Expression* is a set of transformations on one or more values in a record in a DF
+- In the simplest case, expr("somlCel") is equivalent to col("someCol")
+- Sample code
+```
+from pyspark.sql.functions import expr
+expr("(((someCol + 5) * 200) - 6) < otherCol")
+```
 
-## Rows
-- A row is nothing more than a recod of data. Each record in a DF must be of type Row, as we can see when we collect the following DFs
+## Records and Rows
+- In Spark, each row in a DF is a single record, which is represented as an object of type *Row*
 
-## Spark Types
-- Type reference is listed
-- Note that JVM only support signed types, when converting unsigned types, keep in mind that it required 1 more bit when stored as singed types
+### Creating Rows
+- Rows can be created by manually instantiating a Row object with the values that belong in each column
+- Sample code
+```
+from pyspark.sql import Row
+myRow = Row("Hello", None, 1, False)
+```
 
-## Overview of Structured API Execution
-- An overview of the steps:
-  1. Write DF/DS/SQL code
-  2. If valied code, Spark converts this to a *Logical Plan*
-  3. Spark transforms this *Logical Plan* to *Physical Plan*, checking for optimizations along the way
-  4. Sparkthen executes this *Physical Plan*(RDD manipulations) on the cluster
-<img src ="https://www.oreilly.com/library/view/spark-the-definitive/9781491912201/assets/spdg_0401.png"> </img>
+## DataFrame Transformations
+### Creating DFs
+- Sample code
+```
+from pyspark.sql import Row
+from pyspark.sql.types import StructField, StructType, StringType, Longtype
+myManualSchema = StructType([
+  StructField("some", StringType(), True),
+  StructField("col", StringType(), True),
+  StructField("names", LongType(), True)
+])
+myRow = Row("Hello", None, 1)
+myDf = spark.createDataFrame([myRow], myManualSchema)
+myDf.show()
 
-### Logical Planning 
-<img src ="https://www.oreilly.com/library/view/spark-the-definitive/9781491912201/assets/spdg_0402.png"> </img>
-- Logical plan only represents a set of abstract transformations that do not refer to executors or drivers, it's purely to convert the user's set of expressions into the most optimized version: *unresolved logical plan*
-- This plan is unresolved because although the code might be valid, the tables or columns that it refrers to might or might not exist
+# or, simply
+df = sqlContext.createDataFrame([
+  ("a", "Alice", 34),
+  ("b", "Bob", 36),
+  ("c", "Charlie", 30),
+  ("d", "David", 29),
+  ("e", "Esther", 32),
+  ("f", "Fanny", 36),
+  ("g", "Gabby", 60)], ["id", "name", "age"])
+```
 
-- Spark uses the *catalog*, a repository of all table and DF information, to resolve columns and tables in the *analyzer*
-- The analyzer might reject the unresolved logical plan if the required table or column name does not exist in catalog
-- If the analyzer can resolve it, the result is passed through the *Catalyst Optimizer*
-- Catalyst Optimizer is a collection of rules that attempt to optimize the the logical plan by pushing down predicates or seletions
-- 요약
-  - unresolved logical plan: 문법적으로 올바른지 검사만 해서 최적화시키는 단계
-  - analyzer는 테이블 정보가 담긴 catalog를 통해 위의 plan이 올바르게 작동 가능한지 확인
-  - Catalyst Optimizer는 다시 push down과 selection까지 해서 plan을 또 optimize
 
-### Physical Planning
-<img src ="https://www.oreilly.com/library/view/spark-the-definitive/9781491912201/assets/spdg_0403.png"> </img>
-- The *physical plan*, often called a Spark plan, specifies how the logical plan will execute on the cluster by generating different physical execution strategies and comparing them through a cost model, as depicted above
-- Physical planning results in a series of RDDs and transformations
+### select and selectExpr
+- *as* or *alias* method is useful
+- Sample code
+```
+df.select(expr("DEST_COUNTRY_NAME AS destination")).show()
+df.select(expr("DEST_COUNTRY_NAME").alias("destination")).show()
+```
+- *selectExpr* is a simple way to build up complex expressions that create new DFs
+- Sample code
+```
+df.selectExpr(
+  "*", # all original columns
+  "(DEST_COUNTRY_NAME = ORIGIN_COUNTRY_NAME) as withinCountry").show()
+```
 
-### Execution
-- Upon selecting a physical plan, Spark runs all of this code over RDDs, the lower-level programming interface of Spark
+### Converting to Spark Types(Literals)
+- Assign a constant value column using *lit*
+- Sample code
+```
+from pyspark.sql.functions import lit
+df.select(expr("*"), lit(1).alias("One")).show()
+```
 
-### Conclusion
+### Adding Columns: using *withColumn*
+- Sample code
+```
+df.withColumn("numberOne", lit(1)).show()
+```
+
+### Renamng columns
+```
+df.withColumnRenamed("DEST_COUNTRY_NAME", "dest").columns
+```
+
+### Reserved Characters and Keywords
+- To reserve characters like spaces or dashes in column names: Use backtick(`)
+- Sample code
+```
+dfWithLongColName = df.withColumn("This Long Column-Name", expr("ORIGIN_COUNTRY_NAME")) 
+# above code works well, but when referencing a column in an expression, backticks are required
+dfWithLongColName.selectExpr(
+  "`This Long Column-Name`",
+  "`This Long Column-Name` as `enw col`").show()
+```
+
+### Case Sensitivity
+- By default, Spark is case insensitive
+- Following make Spark case sensitive by setting the configuration
+```
+-- in SQL
+set spark.sql.caseSensitive true
+```
+
+### Removing Columns: *drop*
+- Sample code
+```df.drop("ORIGIN_COUNTRY_NAME")```
+
+### Changing a Column's Type(cast)
+- Convert columns from one type to another by casting the column from one type to another; *cast*
+- Sample code
+```
+df.withColumn("count2" col("count").cast("Long"))
+```
+
+### Filtering Rows
+- There are two exactly same methods to perform filter operation: *where* and *filter*
+- Sample code
+```
+df.filter(col("count")>2).show()
+df.where("count < 2").show
+```
+- Spark automatically performs all filtering operations at the same time regardless of the filtering ordering
+  - This means that when multiple filters are needed just chain them sequntially and let Spark handle the rest
+
+### Getting Unique Rows: *distinct*
+```df.select("ORIGIN_COUNTRY_NAME", "DEST_COUNTRY_NAME").distinct().count()```
+
+### Random Samples
+- Note that only the probabilty that each row is sampled is specified, not the number of samples!
+- The three arguments are used: replacment as boolean, fraction as float, seed as integer
+- Sample code: ```df.sample(False, 0.5, 85)```
+
+### Random Split
+- This is often usd with machine learning algorithms to create trainig, validation, and test sets
+- Note that the fraction is not requiared to be sum to one but should be floats
+- Sample code: ```dataFrames = df.randomSplit([1.0, 3.0]), 85)```
+
+### Concatenating and Appending Rows (Union)
+- DFs are immutable: they cannot be appended
+- To union two DFs, they must be sure to have the same schema and number of columns: otherwise, the union will fail
+- Sample codes
+```
+from pyspark.sql import Row
+schema = df.schema
+newRows= [
+  Row("New Country", "Other Country", Integer),
+  Row("New Country 2", "Other Country 3", )
+  ]
