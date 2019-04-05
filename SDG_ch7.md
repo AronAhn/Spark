@@ -152,3 +152,10 @@ pivoted = dfWithDate.groupBy("date").pivot("Country").sum()
   - Refer the following pages to handle UDAFs in Pyspark
     - https://changhsinlee.com/pyspark-udf/
     - https://danvatterott.com/blog/2018/09/06/python-aggregate-udfs-in-pyspark/
+  - Pandas UDF example
+```    
+@pandas_udf("str_col string, bool_col boolean, long_col long", PandasUDFType.GROUPED_MAP)
+def pandas_udf_function(group):
+    # Some procedures on group
+    return group
+```
