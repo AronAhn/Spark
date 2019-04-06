@@ -176,3 +176,9 @@ newRows= [
   Row("New Country", "Other Country", Integer),
   Row("New Country 2", "Other Country 3", )
   ]
+```
+
+### Repartition and Coalesce
+- Repartition will incur a full shuffle of the data: expensive!!
+- Coalesce will not incur a ful shuffle and will try to combine partitions
+  - shuffle이 없어 훨씬 싸지만 합치기만 가능!
