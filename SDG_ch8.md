@@ -5,7 +5,6 @@
 - The most common join expression is *equi-join*
   - It compares whether the specified keys in both left and right datasets are equal
 
-
 ## Join Types
 - Inner, outer, left outer, right outer
 - Left semi joins: keep the rows in the left, and only the left, dataset where the key appears in the right dataset
