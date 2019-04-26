@@ -16,6 +16,7 @@
 
 ## Challenges When Using Joins
 
+
 ### Join on Complex Types
 - Just do it!
 - Sample code
