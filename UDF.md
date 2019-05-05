@@ -61,7 +61,7 @@ def square_list(x):
 square_list_udf = udf(lambda y: square_list(y), ArrayType(FloatType()))
 
 df.select('integer_arrays', square_list_udf('integer_arrays')).show()
-
+```
 
 
 
