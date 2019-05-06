@@ -109,8 +109,8 @@ df.withColumn('v2', pandas_plus_one(df.v))
 	- Output size: Same as input size VS *Any size*
 	- Return types: A datatype VS A *StructType*
 ```
-@pandas_udf(df.schema, PandasUDFType.GROUPED_MAP)
 # Input/output are both a pandas.DataFrame
+@pandas_udf(df.schema, PandasUDFType.GROUPED_MAP)
 def subtract_mean(pdf):
     return pdf.assign(v=pdf.v - pdf.v.mean())
 
