@@ -88,9 +88,9 @@ df.select('integer_arrays', square_list_udf('integer_arrays')).show()
 from pyspark.sql.functions import pandas_udf, PandasUDFType
 
 # Use pandas_udf to define a Pandas UDF
-@pandas_udf('double', PandasUDFType.SCALAR)
-# Input/output are both a pandas.Series of doubles
 
+# Input/output are both a pandas.Series of doubles
+@pandas_udf('double', PandasUDFType.SCALAR)
 def pandas_plus_one(v):
     return v + 1
 
